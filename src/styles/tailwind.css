@@ -1,0 +1,148 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Import the same fonts used in the main app */
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600;700&family=Montserrat:wght@400;500;600;700&family=Tangerine:wght@400;700&display=swap');
+
+@layer base {
+    html, body {
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
+
+        /* Prevent zooming except for pinch zoom on photos */
+        touch-action: manipulation;
+        overscroll-behavior: none;
+
+        /* Disable text resize */
+        -webkit-text-size-adjust: 100%;
+        -moz-text-size-adjust: 100%;
+        -ms-text-size-adjust: 100%;
+    }
+
+    /* Explicitly prevent zooming on form elements */
+    input[type="text"],
+    input[type="number"],
+    input[type="tel"],
+    input[type="email"] {
+        font-size: 16px; /* Prevents auto-zoom on iOS */
+    }
+
+    html {
+        @apply scroll-smooth;
+    }
+
+    body {
+        @apply font-body text-wedding-gray overflow-x-hidden bg-wedding-background;
+    }
+
+    h1, h2, h3, h4 {
+        @apply font-display leading-tight text-christian-text;
+    }
+
+    h1 {
+        @apply text-4xl md:text-5xl;
+    }
+
+    h2 {
+        @apply text-3xl md:text-4xl;
+    }
+
+    h3 {
+        @apply text-2xl md:text-3xl;
+    }
+
+    h4 {
+        @apply text-xl md:text-2xl;
+    }
+}
+
+@layer components {
+    .container {
+        @apply w-full max-w-6xl mx-auto px-4;
+    }
+
+    /* Elegant buttons */
+    .btn {
+        @apply inline-block py-3 px-8 rounded-full font-semibold transition-all duration-300 relative overflow-hidden z-10 font-body tracking-wide;
+    }
+
+    .btn-primary {
+        @apply bg-gradient-to-r text-white shadow-md hover:shadow-lg transform hover:-translate-y-0.5;
+    }
+
+    .btn-christian {
+        @apply from-christian-accent to-christian-accent/90 text-white;
+    }
+
+    .btn-hindu {
+        @apply from-hindu-accent to-hindu-accent/90 text-white;
+    }
+
+    .btn-outline {
+        @apply border-2 bg-transparent shadow-none;
+    }
+
+    .btn-christian-outline {
+        @apply border-christian-accent text-christian-accent hover:bg-christian-accent hover:text-white;
+    }
+
+    .btn-hindu-outline {
+        @apply border-hindu-accent text-hindu-accent hover:bg-hindu-accent hover:text-white;
+    }
+
+    /* Glass effect for cards */
+    .glass-effect {
+        @apply bg-white/70 backdrop-blur-sm border border-white/50;
+    }
+}
+
+/* Optimize the app for mobile use */
+html, body {
+    overscroll-behavior: none;
+    position: fixed;
+    width: 100%;
+    height: 100%;
+    touch-action: manipulation;
+}
+
+#root {
+    width: 100%;
+    height: 100%;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* Prevent highlight on tap for mobile */
+* {
+    -webkit-tap-highlight-color: transparent;
+}
+
+/* Enable text selection for inputs */
+input, textarea {
+    -webkit-user-select: auto;
+    -khtml-user-select: auto;
+    -moz-user-select: auto;
+    -ms-user-select: auto;
+    user-select: auto;
+}
+
+/* Gradient text */
+.gradient-text {
+    background-clip: text;
+    -webkit-background-clip: text;
+    color: transparent;
+    background-image: linear-gradient(to right, #b08968, #d93f0b);
+}
+
+/* Custom animation for loading spinner */
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.animate-spin-custom {
+    animation: spin 1.5s linear infinite;
+}
