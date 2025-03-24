@@ -129,6 +129,9 @@ const PhotoView = () => {
 
     // Handle share functionality
     const handleShareImage = async () => {
+        const response = await fetch(`${API_BASE_URL}${photo.url}`);
+        const blob = await response.blob();
+        const file = new File([blob], photo.filename || 'photo.jpg', { type: blob.type });
         if (!photo || !photo.filename) {
             alert('No photo available to share.');
             return;
@@ -141,8 +144,8 @@ const PhotoView = () => {
                 console.log('Using Web Share API');
                 await navigator.share({
                     title: 'Wedding Photo',
-                    text: 'Check out this photo from Rushel & Sivani\'s wedding! 💕',
-                    url: window.location.href
+                    text: 'Check out this wedding photo! 💕',
+                    files: [file],
                 });
                 console.log('Share successful');
                 setShareSuccess(true);
