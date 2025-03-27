@@ -25,28 +25,6 @@ export const ApiProvider = ({ children }) => {
         }
     };
 
-    // Apply filter to a photo
-    const applyFilter = async (photoId, filter) => {
-        try {
-            const response = await fetch(`${API_ENDPOINT}/photos/${photoId}/filter`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ filter })
-            });
-
-            if (!response.ok) {
-                throw new Error(`Failed to apply filter (Status: ${response.status})`);
-            }
-
-            return await response.json();
-        } catch (error) {
-            console.error('Error applying filter:', error);
-            throw error;
-        }
-    };
-
     // Get photo with different frame/overlay
     const getPhotoWithFrame = async (photoId, frameName) => {
         try {
@@ -99,7 +77,6 @@ export const ApiProvider = ({ children }) => {
         API_BASE_URL,
         API_ENDPOINT,
         fetchPhoto,
-        applyFilter,
         getPhotoWithFrame,
         getAvailableFrames
     };

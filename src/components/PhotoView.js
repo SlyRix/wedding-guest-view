@@ -7,7 +7,7 @@ import {shareNative, isNativeShareAvailable, copyToClipboard, SHARE_PLATFORMS} f
 const PhotoView = () => {
     const {photoId} = useParams();
     const navigate = useNavigate();
-    const {API_BASE_URL, fetchPhoto, applyFilter, getPhotoWithFrame, getAvailableFrames} = useApi();
+    const {API_BASE_URL, fetchPhoto, getPhotoWithFrame, getAvailableFrames} = useApi();
 
     // Main state
     const [photo, setPhoto] = useState(null);
@@ -19,28 +19,12 @@ const PhotoView = () => {
 
     // UI state
     const [showShareOptions, setShowShareOptions] = useState(false);
-    const [showFilters, setShowFilters] = useState(false);
     const [showFrameOptions, setShowFrameOptions] = useState(false);
-    const [selectedFilter, setSelectedFilter] = useState('original');
     const [shareSuccess, setShareSuccess] = useState(false);
     const [downloadSuccess, setDownloadSuccess] = useState(false);
     const [availableFrames, setAvailableFrames] = useState([]);
-    const [isApplyingFilter, setIsApplyingFilter] = useState(false);
     const [isChangingFrame, setIsChangingFrame] = useState(false);
     const [sharing, setSharing] = useState(false);
-
-    // Store filter previews
-    const [filterPreviews, setFilterPreviews] = useState({
-        original: { style: {} },
-        grayscale: { style: {filter: 'grayscale(1)'} },
-        sepia: { style: {filter: 'sepia(0.7) contrast(1.05)'} },
-        dream: { style: {filter: 'brightness(1.1) contrast(0.85) saturate(1.2) blur(0.5px)'} },
-        romance: { style: {filter: 'brightness(1.05) contrast(0.95) saturate(1.15) sepia(0.2) hue-rotate(330deg)'} },
-        forever: { style: {
-                filter: 'contrast(1.15) brightness(1.1) saturate(1.05)',
-                boxShadow: 'inset 0 0 60px rgba(0,0,0,0.5)'
-            }}
-    });
 
     // Zoom functionality
     const [scale, setScale] = useState(1);
@@ -80,8 +64,7 @@ const PhotoView = () => {
                 if (data.success) {
                     setPhoto(data);
 
-                    // Store the original photo ID (without filter prefixes)
-                    // This helps preserve the frame when applying filters
+                    // Store the original photo ID
                     const baseId = photoId.replace(/^filtered_[^_]+_/, '');
                     setOriginalPhotoId(baseId);
 
@@ -215,45 +198,6 @@ const PhotoView = () => {
         }
     };
 
-    // Apply a filter to the photo
-    const handleApplyFilter = async () => {
-        if (selectedFilter === 'original' || isApplyingFilter || !photo) return;
-
-        try {
-            setIsApplyingFilter(true);
-
-            // Important: Use originalPhotoId to ensure we keep the frame when applying filters
-            const photoToFilter = originalPhotoId || photoId;
-
-            // Use the API to apply the filter
-            const result = await applyFilter(photoToFilter, selectedFilter);
-
-            if (result.success) {
-                // Update the URL to the filtered version
-                if (result.photoUrl) {
-                    const filteredPhotoId = result.photoUrl.split('/').pop();
-                    navigate(`/photo/${filteredPhotoId}`, {replace: true});
-
-                    // Reload the photo data with the new filtered version
-                    const newPhotoData = await fetchPhoto(filteredPhotoId);
-                    if (newPhotoData.success) {
-                        setPhoto(newPhotoData);
-                        // We keep the selectedFilter as is (don't reset to original)
-                        // Close filter panel
-                        setShowFilters(false);
-                    }
-                }
-            } else {
-                alert(result.error || 'Failed to apply filter');
-            }
-        } catch (error) {
-            console.error('Error applying filter:', error);
-            alert('Failed to apply filter. Please try again.');
-        } finally {
-            setIsApplyingFilter(false);
-        }
-    };
-
     // Change the photo frame/overlay
     const handleChangeFrame = async (frameName) => {
         if (!photo || isChangingFrame) return;
@@ -261,7 +205,7 @@ const PhotoView = () => {
         try {
             setIsChangingFrame(true);
 
-            // If we have an original photo ID, use that to ensure we're applying 
+            // If we have an original photo ID, use that to ensure we're applying
             // the frame to the base photo without filters
             const photoToFrame = originalPhotoId || photoId;
 
@@ -280,9 +224,6 @@ const PhotoView = () => {
 
                         // Update original photo ID
                         setOriginalPhotoId(result.photoId);
-
-                        // Reset filter to original when changing frames
-                        setSelectedFilter('original');
 
                         // Close frame options panel
                         setShowFrameOptions(false);
@@ -388,18 +329,11 @@ const PhotoView = () => {
                             transition={{type: "spring", damping: 20}}
                             className="flex items-center justify-center"
                         >
-                            {/* Apply selected filter visually to preview if not yet applied on server */}
-                            <div style={
-                                selectedFilter !== 'original' && !photoId.includes(`filtered_${selectedFilter}_`)
-                                    ? filterPreviews[selectedFilter]?.style || {}
-                                    : {}
-                            }>
-                                <img
-                                    src={`${API_BASE_URL}${photo.url}`}
-                                    alt="Wedding photo"
-                                    className="w-full h-auto"
-                                />
-                            </div>
+                            <img
+                                src={`${API_BASE_URL}${photo.url}`}
+                                alt="Wedding photo"
+                                className="w-full h-auto"
+                            />
                         </motion.div>
 
                         {/* Mobile instruction overlay - briefly shown */}
@@ -423,31 +357,12 @@ const PhotoView = () => {
                     </div>
 
                     {/* Action buttons */}
-                    <div className="p-4 grid grid-cols-3 gap-3">
-                        <motion.button
-                            whileHover={{scale: 1.05}}
-                            whileTap={{scale: 0.95}}
-                            onClick={() => {
-                                setShowFilters(!showFilters);
-                                setShowShareOptions(false);
-                                setShowFrameOptions(false);
-                            }}
-                            className={`flex flex-col items-center justify-center p-3 rounded-lg transition-colors ${showFilters ? 'bg-wedding-love/10 text-wedding-love' : 'bg-gray-100 hover:bg-gray-200'}`}
-                        >
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mb-1" fill="none"
-                                 viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                                      d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"/>
-                            </svg>
-                            <span className="text-sm font-medium">Filters</span>
-                        </motion.button>
-
+                    <div className="p-4 grid grid-cols-2 gap-3">
                         <motion.button
                             whileHover={{scale: 1.05}}
                             whileTap={{scale: 0.95}}
                             onClick={() => {
                                 setShowFrameOptions(!showFrameOptions);
-                                setShowFilters(false);
                                 setShowShareOptions(false);
                             }}
                             className={`flex flex-col items-center justify-center p-3 rounded-lg transition-colors ${showFrameOptions ? 'bg-wedding-love/10 text-wedding-love' : 'bg-gray-100 hover:bg-gray-200'}`}
@@ -459,12 +374,12 @@ const PhotoView = () => {
                             </svg>
                             <span className="text-sm font-medium">Frames</span>
                         </motion.button>
+
                         <motion.button
                             whileHover={{scale: 1.02}}
                             whileTap={{scale: 0.98}}
                             onClick={() => {
                                 setShowFrameOptions(false);
-                                setShowFilters(false);
                                 setShowShareOptions(handleShareImage);
                             }}
                             disabled={sharing}
@@ -556,73 +471,6 @@ const PhotoView = () => {
                             {downloadSuccess ? "Downloaded!" : "Download Photo"}
                         </motion.button>
                     </div>
-
-                    {/* Filter panel */}
-                    <AnimatePresence>
-                        {showFilters && (<motion.div
-                            initial={{height: 0, opacity: 0}}
-                            animate={{height: 'auto', opacity: 1}}
-                            exit={{height: 0, opacity: 0}}
-                            className="overflow-hidden border-t border-gray-200"
-                        >
-                            <div className="p-4 bg-gray-50">
-                                <div className="flex items-center justify-between mb-4">
-                                    <h3 className="font-medium">Photo Filters</h3>
-
-                                    {selectedFilter !== 'original' && (<button
-                                        onClick={handleApplyFilter}
-                                        disabled={isApplyingFilter}
-                                        className={`px-3 py-1 bg-wedding-love text-white text-sm rounded-full ${isApplyingFilter ? 'opacity-50 cursor-not-allowed' : ''}`}
-                                    >
-                                        {isApplyingFilter ? (<div className="flex items-center">
-                                            <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
-                                                 xmlns="http://www.w3.org/2000/svg" fill="none"
-                                                 viewBox="0 0 24 24">
-                                                <circle className="opacity-25" cx="12" cy="12" r="10"
-                                                        stroke="currentColor" strokeWidth="4"></circle>
-                                                <path className="opacity-75" fill="currentColor"
-                                                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                            </svg>
-                                            Applying...
-                                        </div>) : "Apply Filter"}
-                                    </button>)}
-                                </div>
-
-                                <div className="flex space-x-3 overflow-x-auto py-2">
-                                    {Object.entries(filterPreviews).map(([filterId, filter]) => {
-                                        const filterName =
-                                            filterId === 'original' ? 'Original' :
-                                                filterId === 'grayscale' ? 'B&W' :
-                                                    filterId === 'sepia' ? 'Vintage' :
-                                                        filterId === 'dream' ? 'Dream' :
-                                                            filterId === 'romance' ? 'Romance' :
-                                                                filterId === 'forever' ? 'Forever' :
-                                                                    filterId;
-
-                                        return (
-                                            <button
-                                                key={filterId}
-                                                onClick={() => setSelectedFilter(filterId)}
-                                                className={`flex flex-col items-center ${selectedFilter === filterId ? 'bg-wedding-love/10 ring-2 ring-wedding-love' : 'bg-white hover:bg-gray-100'} p-2 rounded-lg transition-colors`}
-                                            >
-                                                <div
-                                                    className="w-16 h-16 rounded-lg overflow-hidden mb-2"
-                                                    style={filter.style}
-                                                >
-                                                    <img
-                                                        src={`${API_BASE_URL}${photo.thumbnailUrl || photo.url}`}
-                                                        alt={filterName}
-                                                        className="w-full h-full object-cover"
-                                                    />
-                                                </div>
-                                                <span className="text-xs font-medium">{filterName}</span>
-                                            </button>
-                                        );
-                                    })}
-                                </div>
-                            </div>
-                        </motion.div>)}
-                    </AnimatePresence>
 
                     {/* Frame options panel */}
                     <AnimatePresence>
